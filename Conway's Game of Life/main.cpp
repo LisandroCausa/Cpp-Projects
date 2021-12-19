@@ -50,9 +50,6 @@ int main()
 
 	unsigned int population = 0;
 
-	bool isClicking = false;
-	bool altered_cells[size][size];
-
 	const unsigned short pixelsPerCell = 10;
 	const unsigned short pixelsBetweenCells = 1;
 
@@ -95,35 +92,25 @@ int main()
 			wasKeyPressed = false;
 		}
 
-		if (sf::Mouse::isButtonPressed(sf::Mouse::Left) &&
-			sf::Mouse::getPosition(window).x > 0 &&
+		if (sf::Mouse::getPosition(window).x > 0 &&
 			sf::Mouse::getPosition(window).x < screenSizeX &&
 			sf::Mouse::getPosition(window).y > 0 &&
 			sf::Mouse::getPosition(window).y < screenSizeY)
 		{
-			if (isClicking == false)
+			if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
 			{
-				for (unsigned int y = 0; y < size; y++)
-				{
-					for (unsigned int x = 0; x < size; x++)
-					{
-						altered_cells[y][x] = false;
-					}
-				}
-				isClicking = true;
+				sf::Vector2i* cellXY = new sf::Vector2i;
+				*cellXY = searchCellInGrid(sf::Mouse::getPosition(window), pixelsPerCell + pixelsBetweenCells);
+				grid[cellXY->y][cellXY->x] = true;
+				delete cellXY;
 			}
-			sf::Vector2i* cellXY = new sf::Vector2i;
-			*cellXY = searchCellInGrid(sf::Mouse::getPosition(window), pixelsPerCell + pixelsBetweenCells);
-			if (altered_cells[cellXY->y][cellXY->x] == false)
+			else if (sf::Mouse::isButtonPressed(sf::Mouse::Right))
 			{
-				grid[cellXY->y][cellXY->x] = !grid[cellXY->y][cellXY->x];
-				altered_cells[cellXY->y][cellXY->x] = true;
+				sf::Vector2i* cellXY = new sf::Vector2i;
+				*cellXY = searchCellInGrid(sf::Mouse::getPosition(window), pixelsPerCell + pixelsBetweenCells);
+				grid[cellXY->y][cellXY->x] = false;
+				delete cellXY;
 			}
-			delete cellXY;
-		}
-		else
-		{
-			isClicking = false;
 		}
 
 		window.clear(sf::Color::Black);
