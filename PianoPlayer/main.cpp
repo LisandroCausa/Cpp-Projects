@@ -2,13 +2,13 @@
 #include "SFML/Graphics.hpp" 
 #include "SFML/Audio.hpp"
 
-sf::RenderWindow window(sf::VideoMode(775, 600), "Piano Player");
 
 class key
 {
 private:
 	int y;
 	bool pressable;
+	bool is_sharp;
 	sf::Color normal_color;
 	sf::Color pressed_color;
 	sf::Vector2f key_pos;
@@ -22,13 +22,14 @@ public:
 	sf::Text text;
 
 
-	key(float x, sf::SoundBuffer buffer, sf::Keyboard::Key keyboard, bool sharp, sf::String t)
+	key(const float x, const sf::SoundBuffer buffer, const sf::Keyboard::Key keyboard, const bool sharp, const sf::String t)
 	{
 		font.loadFromFile("Resources/Fonts/arial.ttf");
 		text = sf::Text(t, font, 32);
 		text.setFillColor(sf::Color::Black);
 		text.setStyle(sf::Text::Bold);
-		if (sharp)
+		is_sharp = sharp;
+		if (is_sharp)
 		{
 			y = 190;
 			text.setPosition(x + 25, y + 70);
@@ -54,20 +55,19 @@ public:
 		pressable = true;
 	}
 
-	bool input(bool hasClicked)
+	void input(bool& hasClicked, sf::RenderWindow& window)
 	{
-		key_pos = rect.getPosition();
 		mouse = sf::Mouse::getPosition(window);
-		if (hasClicked) return true;
+		key_pos = rect.getPosition();
 		if (!hasClicked && sf::Mouse::isButtonPressed(sf::Mouse::Left) && mouse.x >= key_pos.x && mouse.x <= key_pos.x + rect.getSize().x && mouse.y >= key_pos.y && mouse.y <= key_pos.y + rect.getSize().y)
 		{
+			hasClicked = true;
 			if (pressable)
 			{
 				sound.play();
 				pressable = false;
 			}
 			rect.setFillColor(pressed_color);
-			return true;
 		}
 		else if (sf::Keyboard::isKeyPressed(keyboard_key))
 		{
@@ -83,10 +83,14 @@ public:
 			pressable = true;
 			rect.setFillColor(normal_color);
 		}
-		return false;
 	}
 
-	void draw_screen()
+	bool isSharp()
+	{
+		return is_sharp;
+	}
+
+	void draw_screen(sf::RenderWindow& window)
 	{
 		window.draw(rect);
 		window.draw(text);
@@ -96,9 +100,10 @@ public:
 
 int main()
 {
+	sf::RenderWindow window(sf::VideoMode(775, 600), "Piano Player");
 	window.setFramerateLimit(40);
 
-	sf::Image* icon = new sf::Image;
+	sf::Image* icon{ new sf::Image };
 	(*icon).loadFromFile("Resources/Icon.png");
 	window.setIcon((*icon).getSize().x, (*icon).getSize().y, (*icon).getPixelsPtr());
 	delete icon;
@@ -112,7 +117,7 @@ int main()
 	title_text.setPosition(240, 50);
 	title_text.setStyle(sf::Text::Style::Bold);
 
-	sf::SoundBuffer* buffer = new sf::SoundBuffer[13];
+	sf::SoundBuffer* buffer{ new sf::SoundBuffer[13] };
 	buffer[0].loadFromFile("Resources/Sounds/C5.wav");
 	buffer[1].loadFromFile("Resources/Sounds/C#5.wav");
 	buffer[2].loadFromFile("Resources/Sounds/D5.wav");
@@ -145,12 +150,13 @@ int main()
 	
 	delete[] buffer;
 
-	bool hasClicked = false;
-	sf::Event event;
+	bool hasClicked{ false };
 
+	sf::Event event;
 	while (window.isOpen())
 	{
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) window.close();
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) 
+			window.close();
 
 		while (window.pollEvent(event))
 		{
@@ -163,36 +169,35 @@ int main()
 
 		hasClicked = false;
 
-		hasClicked = keys[1].input(hasClicked);
-		hasClicked = keys[3].input(hasClicked);
-		hasClicked = keys[6].input(hasClicked);
-		hasClicked = keys[8].input(hasClicked);
-		hasClicked = keys[10].input(hasClicked);
+		for (int i{ 0 }; i < 13; ++i)
+		{
+			if (keys[i].isSharp())
+			{
+				keys[i].input(hasClicked, window);
+			}
+		}
+		for (int i{ 0 }; i < 13; ++i)
+		{
+			if (keys[i].isSharp() == false)
+			{
+				keys[i].input(hasClicked, window);
+			}
+		}
 
-		hasClicked = keys[0].input(hasClicked);
-		hasClicked = keys[2].input(hasClicked);
-		hasClicked = keys[4].input(hasClicked);
-		hasClicked = keys[5].input(hasClicked);
-		hasClicked = keys[7].input(hasClicked);
-		hasClicked = keys[9].input(hasClicked);
-		hasClicked = keys[11].input(hasClicked);
-		hasClicked = keys[12].input(hasClicked);
-
-
-		keys[0].draw_screen();
-		keys[2].draw_screen();
-		keys[4].draw_screen();
-		keys[5].draw_screen();
-		keys[7].draw_screen();
-		keys[9].draw_screen();
-		keys[11].draw_screen();
-		keys[12].draw_screen();
-
-		keys[1].draw_screen();
-		keys[3].draw_screen();
-		keys[6].draw_screen();
-		keys[8].draw_screen();
-		keys[10].draw_screen();
+		for (int i{ 0 }; i < 13; ++i)
+		{
+			if (keys[i].isSharp() == false)
+			{
+				keys[i].draw_screen(window);
+			}
+		}
+		for (int i{ 0 }; i < 13; ++i)
+		{
+			if (keys[i].isSharp())
+			{
+				keys[i].draw_screen(window);
+			}
+		}
 
 		window.display();
 	}
